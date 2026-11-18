@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jadwal Mingguan</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2456d6">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#fbfbf8;--bg2:#f0f0ea;--ink:#1d1d1b;--mute:#6b6b64;--line:#dcdcd3;--acc:#2456d6;--accfg:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17171a;--bg2:#222227;--ink:#ececE6;--mute:#9a9aa3;--line:#33333a;--acc:#7da2ff;--accfg:#10131c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17171a;--bg2:#222227;--ink:#ececE6;--mute:#9a9aa3;--line:#33333a;--acc:#7da2ff;--accfg:#10131c;color-scheme:dark}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:15px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+header h1{font-size:17px;margin:0;flex:1}
+button{font:inherit;color:inherit;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.z{width:38px;font-size:18px;padding:4px 0}
+#sc{flex:1;overflow:auto;position:relative;-webkit-overflow-scrolling:touch}
+#grid{display:grid;grid-template-columns:54px repeat(7,minmax(104px,1fr));min-width:810px}
+.hd{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);border-left:1px solid var(--line);text-align:center;padding:8px 0;font-weight:600}
+.hd.today{color:var(--acc);box-shadow:inset 0 -3px var(--acc)}
+.corner{position:sticky;top:0;left:0;z-index:4;background:var(--bg);border-bottom:1px solid var(--line)}
+#tc{position:sticky;left:0;z-index:3;background:var(--bg);height:calc(19*var(--H) + 20px)}
+#tc span{position:absolute;right:6px;font-size:12px;color:var(--mute);transform:translateY(-50%)}
+.col{position:relative;height:calc(19*var(--H) + 20px);border-left:1px solid var(--line);background-image:linear-gradient(var(--line) 1px,transparent 1px);background-size:100% var(--H);background-position:0 10px}
+.ev{position:absolute;box-sizing:border-box;border:2px solid #1d1d1b;border-radius:8px;padding:3px 6px;overflow:hidden;color:#1d1d1b;cursor:pointer;font-size:13px;line-height:1.25}
+.ev b{display:block}.ev span{display:block;font-size:12px}
+.ev.sm{padding:1px 6px}.ev.sm span{display:none}
+#fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--acc);color:var(--accfg);border:0;border-radius:999px;padding:12px 20px;font-weight:600;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:5}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:10}
+#ov.on{display:flex}
+#md{background:var(--bg);width:100%;max-width:420px;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:10px}
+@media (min-width:600px){#ov{align-items:center}#md{border-radius:16px}}
+#md h2{margin:0;font-size:17px}
+label{display:grid;gap:4px;font-size:13px;color:var(--mute)}
+input,select{font:inherit;color:var(--ink);background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:8px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#cl{display:flex;gap:10px}
+#cl button{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);padding:0}
+#cl button.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+#err{color:#d33;font-size:13px;min-height:1.2em}
+.ac{display:flex;gap:8px}.ac .sp{flex:1}
+.pri{background:var(--acc);color:var(--accfg);border:0;font-weight:600}
+.del{color:#d33}
+</style>
+</head>
+<body>
+<header>
+<h1>Jadwal mingguan</h1>
+<button class="z" id="zo" aria-label="Perkecil">−</button>
+<button class="z" id="zi" aria-label="Perbesar">+</button>
+</header>
+<div id="sc"><div id="grid"></div></div>
+<button id="fab">+ Kegiatan</button>
+<div id="ov"><div id="md" role="dialog" aria-modal="true">
+<h2 id="mt">Kegiatan baru</h2>
+<label>Nama kegiatan<input id="n" maxlength="60" placeholder="Contoh: Kelas Algoritma"></label>
+<label>Hari<select id="d"></select></label>
+<div class="r2">
+<label>Mulai<input id="s" type="time" step="300" min="05:00"></label>
+<label>Selesai<input id="e" type="time" step="300"></label>
+</div>
+<div id="cl" role="group" aria-label="Warna"></div>
+<div id="err" role="alert"></div>
+<div class="ac"><button class="del" id="dl">Hapus</button><span class="sp"></span><button id="cx">Batal</button><button class="pri" id="sv">Simpan</button></div>
+</div></div>
+<script>
+var DAYS=["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu"];
+var COL=["#9ec5fe","#a7e3c0","#ffd98a","#f5a9a9","#c9b6f2","#f4b6d6"];
+var T0=300,T1=1440,K="jadwal-v1";
+var st={ev:[],h:60};
+try{var raw=localStorage.getItem(K);if(raw){var o=JSON.parse(raw);if(o&&Array.isArray(o.ev))st=o;}}catch(e){}
+function save(){try{localStorage.setItem(K,JSON.stringify(st));}catch(e){}}
+function $(i){return document.getElementById(i);}
+function fmt(m){return String(Math.floor(m/60)).padStart(2,"0")+"."+String(m%60).padStart(2,"0");}
+function toIn(m){return m>=1440?"00:00":fmt(m).replace(".",":");}
+function fromIn(v){if(!v)return NaN;var p=v.split(":");return +p[0]*60+ +p[1];}
+var grid=$("grid"),sc=$("sc"),cols=[],tc,today=(new Date().getDay()+6)%7;
+
+function build(){
+ var c=document.createElement("div");c.className="corner";grid.appendChild(c);
+ DAYS.forEach(function(n,i){var h=document.createElement("div");h.className="hd"+(i===today?" today":"");h.textContent=n;grid.appendChild(h);});
+ tc=document.createElement("div");tc.id="tc";grid.appendChild(tc);
+ DAYS.forEach(function(n,i){
+  var col=document.createElement("div");col.className="col";
+  col.addEventListener("click",function(e){
+   if(e.target!==col)return;
+   var m=T0+Math.floor((e.offsetY-10)/st.h*2)*30;
+   m=Math.max(T0,Math.min(m,T1-60));openM(null,i,m);
+  });
+  grid.appendChild(col);cols.push(col);
+  var o=document.createElement("option");o.value=i;o.textContent=n;$("d").appendChild(o);
+ });
+ COL.forEach(function(c,i){var b=document.createElement("button");b.style.background=c;b.setAttribute("aria-label","Warna "+(i+1));b.onclick=function(){pick(i);};$("cl").appendChild(b);});
+}
+function layout(list){
+ list.sort(function(a,b){return a.s-b.s||a.e-b.e;});
+ var cl=[],end=0;
+ function flush(){var lanes=[];cl.forEach(function(v){var i=lanes.findIndex(function(le){return le<=v.s;});if(i<0){i=lanes.length;lanes.push(0);}lanes[i]=v.e;v.l=i;});cl.forEach(function(v){v.n=lanes.length;});cl=[];}
+ list.forEach(function(v){if(cl.length&&v.s>=end){flush();end=0;}cl.push(v);end=Math.max(end,v.e);});
+ flush();
+}
+function render(){
+ var H=st.h;document.documentElement.style.setProperty("--H",H+"px");
+ tc.innerHTML="";
+ for(var h=5;h<=24;h++){var s=document.createElement("span");s.textContent=fmt(h*60);s.style.top=(10+(h-5)*H)+"px";tc.appendChild(s);}
+ cols.forEach(function(col,d){
+  col.innerHTML="";
+  var list=st.ev.filter(function(v){return v.d===d;});
+  layout(list);
+  list.forEach(function(v){
+   var el=document.createElement("div"),ht=(v.e-v.s)/60*H;
+   el.className="ev"+(ht<38?" sm":"");
+   el.style.top=(10+(v.s-T0)/60*H)+"px";
+   el.style.height=Math.max(ht-1,14)+"px";
+   el.style.left="calc(2px + (100% - 4px) * "+(v.l/v.n)+")";
+   el.style.width="calc((100% - 4px) * "+(1/v.n)+" - 2px)";
+   el.style.background=COL[v.c]||COL[0];
+   var b=document.createElement("b");b.textContent=v.t;
+   var t=document.createElement("span");t.textContent=fmt(v.s)+" – "+fmt(v.e);
+   el.appendChild(b);el.appendChild(t);
+   el.addEventListener("click",function(e){e.stopPropagation();openM(v);});
+   col.appendChild(el);
+  });
+ });
+}
+function zoom(dv){
+ var n=Math.max(30,Math.min(120,st.h+dv));if(n===st.h)return;
+ var r=(sc.scrollTop+sc.clientHeight/2)/sc.scrollHeight;
+ st.h=n;render();save();
+ sc.scrollTop=r*sc.scrollHeight-sc.clientHeight/2;
+}
+var cur=null,cc=0;
+function pick(i){cc=i;[].forEach.call($("cl").children,function(b,j){b.classList.toggle("on",j===i);});}
+function openM(v,d,m){
+ cur=v;
+ $("mt").textContent=v?"Edit kegiatan":"Kegiatan baru";
+ $("n").value=v?v.t:"";
+ $("d").value=v?v.d:(d==null?today:d);
+ var s=v?v.s:(m==null?420:m);
+ $("s").value=toIn(s);$("e").value=toIn(v?v.e:Math.min(s+60,T1));
+ pick(v?v.c:cc);
+ $("dl").style.visibility=v?"visible":"hidden";
+ $("err").textContent="";$("ov").classList.add("on");$("n").focus();
+}
+function closeM(){$("ov").classList.remove("on");}
+function submit(){
+ var s=fromIn($("s").value),e=fromIn($("e").value);
+ if(isNaN(s)||isNaN(e)){$("err").textContent="Isi jam mulai dan jam selesai.";return;}
+ if(e===0)e=1440;
+ if(s<T0){$("err").textContent="Jam mulai paling awal 05.00.";return;}
+ if(e<=s){$("err").textContent="Jam selesai harus setelah jam mulai.";return;}
+ var o={id:cur?cur.id:Date.now(),t:$("n").value.trim()||"Kegiatan",d:+$("d").value,s:s,e:e,c:cc};
+ if(cur)st.ev=st.ev.map(function(v){return v.id===cur.id?o:v;});else st.ev.push(o);
+ save();render();closeM();
+}
+$("sv").onclick=submit;$("cx").onclick=closeM;
+$("dl").onclick=function(){if(!cur)return;st.ev=st.ev.filter(function(v){return v.id!==cur.id;});save();render();closeM();};
+$("ov").addEventListener("click",function(e){if(e.target===$("ov"))closeM();});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeM();});
+$("fab").onclick=function(){openM(null);};
+$("zi").onclick=function(){zoom(15);};
+$("zo").onclick=function(){zoom(-15);};
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+build();render();
+sc.scrollTop=2*st.h;
+</script>
+</body>
+</html>
